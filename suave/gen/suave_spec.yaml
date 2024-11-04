@@ -483,3 +483,18 @@ functions:
         - name: time
           type: uint256
           description: "Current Unix time in milliseconds"
+  - name: add
+    address: '0x0000000000000000000000000000000042010009'
+    description: "Adds two unsigned 64-bit integers together"
+    input:
+      - name: c
+        type: uint64
+        description: "First number to add"
+      - name: d
+        type: uint64
+        description: "Second number to add"
+    output:
+      fields:
+        - name: output1
+          type: uint64
+          description: "Sum of the two input numbers"

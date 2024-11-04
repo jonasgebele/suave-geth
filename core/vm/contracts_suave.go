@@ -397,3 +397,7 @@ func (s *suaveRuntime) aesDecrypt(key []byte, ciphertext []byte) ([]byte, error)
 	}
 	return plaintext, nil
 }
+
+func (s *suaveRuntime) add(c uint64, d uint64) (uint64, error) {
+    return c+d, nil
+}

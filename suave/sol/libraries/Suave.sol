@@ -108,6 +108,8 @@ library Suave {
 
     address public constant IS_CONFIDENTIAL_ADDR = 0x0000000000000000000000000000000042010000;
 
+    address public constant ADD = 0x0000000000000000000000000000000042010009;
+
     address public constant AES_DECRYPT = 0x000000000000000000000000000000005670000D;
 
     address public constant AES_ENCRYPT = 0x000000000000000000000000000000005670000e;
@@ -169,6 +171,19 @@ library Suave {
             // Load the data after 32 bytes, so add 0x20
             b := mload(add(isConfidentialBytes, 0x20))
         }
+    }
+
+    /// @notice Adds two unsigned 64-bit integers together
+    /// @param c First number to add
+    /// @param d Second number to add
+    /// @return output1 Sum of the two input numbers
+    function add(uint64 c, uint64 d) internal returns (uint64) {
+        (bool success, bytes memory data) = ADD.call(abi.encode(c, d));
+        if (!success) {
+            revert PeekerReverted(ADD, data);
+        }
+
+        return abi.decode(data, (uint64));
     }
 
     /// @notice Decrypts a message using given bytes as a cipher.
@@ -348,8 +363,8 @@ library Suave {
         return data;
     }
 
-    /// @notice Returns the current Kettle Unix time in seconds.
-    /// @return time Current Unix time in seconds
+    /// @notice Returns the current Kettle Unix time in milliseconds. Insecure because it assumes trust in Kettle's clock.
+    /// @return time Current Unix time in milliseconds
     function getInsecureTime() internal returns (uint256) {
         (bool success, bytes memory data) = GET_INSECURE_TIME.call(abi.encode());
         if (!success) {

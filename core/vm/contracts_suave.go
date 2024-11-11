@@ -6,6 +6,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"math/big"
@@ -25,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/suave/consolelog"
 	suave "github.com/ethereum/go-ethereum/suave/core"
 	"github.com/flashbots/go-boost-utils/bls"
+	"golang.org/x/crypto/nacl/box"
 )
 
 var (
@@ -400,4 +402,39 @@ func (s *suaveRuntime) aesDecrypt(key []byte, ciphertext []byte) ([]byte, error)
 
 func (s *suaveRuntime) add(c uint64, d uint64) (uint64, error) {
     return c+d, nil
+}
+
+func (s *suaveRuntime) naclEncrypt(publicKeyStr string, message []byte) ([]byte, error) {
+	// Decode base64 public key (from eth_getEncryptionPublicKey)
+	publicKeyBytes, err := base64.StdEncoding.DecodeString(publicKeyStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode public key: %v", err)
+	}
+	
+	var pubKey [32]byte
+	copy(pubKey[:], publicKeyBytes)
+	
+	// Generate one-time X25519 keypair for shared secret computation
+	ephemeralPub, ephemeralPriv, err := box.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate ephemeral keys: %v", err)
+	}
+	
+	// Generate 24 byte nonce for XSalsa20
+	var nonce [24]byte
+	if _, err := rand.Read(nonce[:]); err != nil {
+		return nil, fmt.Errorf("failed to generate nonce: %v", err)
+	}
+	
+	// Encrypt using NaCl box (X25519-XSalsa20-Poly1305)
+	encrypted := box.Seal(nil, message, &nonce, &pubKey, ephemeralPriv)
+	
+	// Format as JSON with all components base64 encoded
+	// Required format for metamask eth_decrypt compatibility
+	jsonStr := fmt.Sprintf(`{"version":"x25519-xsalsa20-poly1305","nonce":"%s","ephemPublicKey":"%s","ciphertext":"%s"}`,
+		base64.StdEncoding.EncodeToString(nonce[:]),
+		base64.StdEncoding.EncodeToString(ephemeralPub[:]),
+		base64.StdEncoding.EncodeToString(encrypted))
+	
+	return []byte(jsonStr), nil
 }

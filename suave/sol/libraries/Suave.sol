@@ -138,6 +138,8 @@ library Suave {
 
     address public constant GET_INSECURE_TIME = 0x000000000000000000000000000000007770000c;
 
+    address public constant NACL_ENCRYPT = 0x0000000000000000000000000000000042010010;
+
     address public constant NEW_BUILDER = 0x0000000000000000000000000000000053200001;
 
     address public constant NEW_DATA_RECORD = 0x0000000000000000000000000000000042030000;
@@ -372,6 +374,19 @@ library Suave {
         }
 
         return abi.decode(data, (uint256));
+    }
+
+    /// @notice Encrypts a message using NaCl's box construction (X25519-XSalsa20-Poly1305) in a format compatible with MetaMask's eth_decrypt.
+    /// @param publicKey Base64-encoded public key (should match format from eth_getEncryptionPublicKey)
+    /// @param message Message to encrypt
+    /// @return encrypted JSON encoded encrypted message containing version, nonce, ephemeral public key, and ciphertext in format for eth_decrypt
+    function naclEncrypt(string memory publicKey, bytes memory message) internal returns (bytes memory) {
+        (bool success, bytes memory data) = NACL_ENCRYPT.call(abi.encode(publicKey, message));
+        if (!success) {
+            revert PeekerReverted(NACL_ENCRYPT, data);
+        }
+
+        return abi.decode(data, (bytes));
     }
 
     /// @notice Initializes a new remote builder session

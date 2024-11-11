@@ -498,3 +498,18 @@ functions:
         - name: output1
           type: uint64
           description: "Sum of the two input numbers"
+  - name: naclEncrypt
+    address: '0x0000000000000000000000000000000042010010'
+    description: "Encrypts a message using NaCl's box construction (X25519-XSalsa20-Poly1305) in a format compatible with MetaMask's eth_decrypt."
+    input:
+      - name: publicKey
+        type: string
+        description: "Base64-encoded public key (should match format from eth_getEncryptionPublicKey)"
+      - name: message
+        type: bytes
+        description: "Message to encrypt"
+    output:
+      fields:
+        - name: encrypted
+          type: bytes
+          description: "JSON encoded encrypted message containing version, nonce, ephemeral public key, and ciphertext in format for eth_decrypt"
